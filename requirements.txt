@@ -5,4 +5,4 @@ scikit-learn
 matplotlib
 joblib
 gdown
-tensorflow=1.15.0
+tensorflow
