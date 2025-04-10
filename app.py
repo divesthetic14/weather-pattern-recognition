@@ -1,18 +1,20 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import joblib
+from tensorflow.keras.models import load_model
 
 import setup_models  # this will auto-download the models
 
 # Load models
-# forecast_model = load_model("models/forecasting_lstm_model.h5")
-# forecast_scaler = joblib.load("models/max_temp_scaler.pkl")
+forecast_model = load_model("models/forecasting_lstm_model.h5")
+forecast_scaler = joblib.load("models/max_temp_scaler.pkl")
 
-# clf_model = joblib.load("models/classifier_rain_tomorrow.pkl")
-# clf_scaler = joblib.load("models/classifier_scaler.pkl")
+clf_model = joblib.load("models/classifier_rain_tomorrow.pkl")
+clf_scaler = joblib.load("models/classifier_scaler.pkl")
 
-# cluster_model = joblib.load("models/kmeans_weather.pkl")
-# cluster_scaler = joblib.load("models/cluster_scaler.pkl")
+cluster_model = joblib.load("models/kmeans_weather.pkl")
+cluster_scaler = joblib.load("models/cluster_scaler.pkl")
 cluster_df = pd.read_csv("data/clustered_locations.csv")
 
 # Load data
