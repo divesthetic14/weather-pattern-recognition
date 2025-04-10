@@ -6,6 +6,7 @@ from tensorflow.keras.models import load_model
 import gdown
 
 import os
+os.environ['TF_GRAPPLER_DISABLE'] = '1'
 
 def download_models():
     os.makedirs("models", exist_ok=True)
