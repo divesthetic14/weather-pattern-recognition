@@ -2,6 +2,7 @@ ipykernel
 numpy
 pandas
 matplotlib
+gdown
 flask
 memory_profiler
 streamlit
