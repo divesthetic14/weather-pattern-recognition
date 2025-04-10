@@ -6,6 +6,8 @@ from tensorflow.keras.models import load_model
 
 import setup_models  # this will auto-download the models
 
+setup_models()
+
 # Load models
 forecast_model = load_model("models/forecasting_lstm_model.h5")
 forecast_scaler = joblib.load("models/max_temp_scaler.pkl")
