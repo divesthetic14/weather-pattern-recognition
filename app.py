@@ -27,7 +27,7 @@ def download_models():
 download_models()
 
 # Load models
-forecast_model = load_model("models/forecasting_lstm_model.keras")
+forecast_model = load_model("models/forecasting_lstm_model.h5")
 forecast_scaler = joblib.load("models/max_temp_scaler.pkl")
 
 clf_model = joblib.load("models/classifier_rain_tomorrow.pkl")
