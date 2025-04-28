@@ -12,7 +12,7 @@ def download_models():
     os.makedirs("models", exist_ok=True)
 
     files = {
-       "models/forecasting_lstm_model.h5": "1ywjAxavyxVoagoHitQL9HtHKzMgRUKXQ",
+       "models/forecasting_lstm_model.keras": "1j_z8vrwF6SMX-sNZyMjJ1eGiNA2ziwuM",
         "models/max_temp_scaler.pkl": "1_Cc0JVKZRcYf4rnOZi3zExdCg1XYfwoT",
         "models/classifier_rain_tomorrow.pkl": "1fzdhjugfo9l8I9MfKx850lXN2bWPuFk1",
         "models/classifier_scaler.pkl": "1lGmJZS8XkUXJeIhP35jSu7JAJ-UkZeZh",
@@ -27,7 +27,7 @@ def download_models():
 download_models()
 
 # Load models
-forecast_model = load_model("models/forecasting_lstm_model.h5")
+forecast_model = load_model("models/forecasting_lstm_model.keras")
 forecast_scaler = joblib.load("models/max_temp_scaler.pkl")
 
 clf_model = joblib.load("models/classifier_rain_tomorrow.pkl")
