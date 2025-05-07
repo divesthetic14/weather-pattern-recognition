@@ -3,32 +3,36 @@ import pandas as pd
 import numpy as np
 import joblib
 from tensorflow.keras.models import load_model
+import matplotlib.pyplot as plt
 import gdown
 
 import os
 os.environ['TF_GRAPPLER_DISABLE'] = '1'
 
-def download_models():
-    os.makedirs("models", exist_ok=True)
+# def download_models():
+#     os.makedirs("models", exist_ok=True)
 
-    files = {
-       "models/forecasting_lstm_model.h5": "1ywjAxavyxVoagoHitQL9HtHKzMgRUKXQ",
-        "models/max_temp_scaler.pkl": "1_Cc0JVKZRcYf4rnOZi3zExdCg1XYfwoT",
-        "models/classifier_rain_tomorrow.pkl": "1fzdhjugfo9l8I9MfKx850lXN2bWPuFk1",
-        "models/classifier_scaler.pkl": "1lGmJZS8XkUXJeIhP35jSu7JAJ-UkZeZh",
-        "models/kmeans_weather.pkl": "1NkRFfoexm6GxAwdUDZv-CaZQRGi1hN2w",
-        "models/cluster_scaler.pkl": "1HhyVWMQPEbcxg4bk1Gk88epUYg395iUp",
-    }
+#     files = {
+#        "models/forecasting_lstm_model.h5": "1ywjAxavyxVoagoHitQL9HtHKzMgRUKXQ",
+#         "models/max_temp_scaler.pkl": "1_Cc0JVKZRcYf4rnOZi3zExdCg1XYfwoT",
+#         "models/classifier_rain_tomorrow.pkl": "1fzdhjugfo9l8I9MfKx850lXN2bWPuFk1",
+#         "models/classifier_scaler.pkl": "1lGmJZS8XkUXJeIhP35jSu7JAJ-UkZeZh",
+#         "models/kmeans_weather.pkl": "1NkRFfoexm6GxAwdUDZv-CaZQRGi1hN2w",
+#         "models/cluster_scaler.pkl": "1HhyVWMQPEbcxg4bk1Gk88epUYg395iUp",
+#     }
 
-    for out_path, file_id in files.items():
-        if not os.path.exists(out_path):
-            gdown.download(f"https://drive.google.com/uc?id={file_id}", out_path, quiet=False)
+#     for out_path, file_id in files.items():
+#         if not os.path.exists(out_path):
+#             gdown.download(f"https://drive.google.com/uc?id={file_id}", out_path, quiet=False)
 
-download_models()
+# download_models()
 
-# Load models
-forecast_model = load_model("models/forecasting_lstm_model.h5")
-forecast_scaler = joblib.load("models/max_temp_scaler.pkl")
+# # Load models
+# forecast_model_lstm = load_model("models/forecasting_lstm_tuned_model.h5")
+# forecast_scaler_lstm = joblib.load("models/max_temp_scaler_lstm_tuned.pkl")
+
+# forecast_model_gru = load_model("models/forecasting_gru_tuned_model.h5")
+# forecast_scaler_gru = joblib.load("models/max_temp_scaler_gru_tuned.pkl")
 
 clf_model = joblib.load("models/classifier_rain_tomorrow.pkl")
 clf_scaler = joblib.load("models/classifier_scaler.pkl")
@@ -48,22 +52,64 @@ tab1, tab2, tab3 = st.tabs(["🔮 Forecasting", "🌧️ Classification", "🧩 
 # 🔮 Forecasting Tab
 # -------------------
 with tab1:
-    st.header("Predict Tomorrow's Max Temperature (LSTM)")
-    city = st.selectbox("Select a city", weather_data["Location"].unique())
+    st.header("Predict Tomorrow's Max Temperature LSTM/GRU")
 
+    # Select model type
+    model_type = st.selectbox("Choose Forecasting Model", ["LSTM", "GRU"])
+
+    # Load model and scaler
+    if model_type == "LSTM":
+        model = load_model("models/forecasting_lstm_tuned_model.h5")
+        scaler = joblib.load("models/max_temp_scaler_lstm_tuned.pkl")
+    else:
+        model = load_model("models/forecasting_gru_tuned_model.h5")
+        scaler = joblib.load("models/max_temp_scaler_gru_tuned.pkl")
+        
+    city = st.selectbox("Select a city", weather_data["Location"].unique())
     df_city = weather_data[weather_data["Location"] == city].copy()
     df_city['Date'] = pd.to_datetime(df_city['Date'])
     df_city = df_city.sort_values("Date")
     df_city['MaxTemp'] = df_city['MaxTemp'].fillna(method='ffill')
     df_city = df_city.dropna(subset=['MaxTemp'])
 
-    scaled = forecast_scaler.transform(df_city[['MaxTemp']])
+    scaled = scaler.transform(df_city[['MaxTemp']])
     last_30 = scaled[-30:].reshape((1, 30, 1))
 
-    pred_scaled = forecast_model.predict(last_30)[0][0]
-    pred_temp = forecast_scaler.inverse_transform([[pred_scaled]])[0][0]
+    pred_scaled = model.predict(last_30)[0][0]
+    pred_temp = scaler.inverse_transform([[pred_scaled]])[0][0]
 
     st.success(f"📈 Predicted Max Temperature in {city} for Tomorrow: **{pred_temp:.2f} °C**")
+
+    # Forecast next 7 days
+    predictions = []
+    for _ in range(7):
+        pred = model.predict(last_30)[0][0]
+        predictions.append(pred)
+        input_seq = np.append(last_30[:, 1:, :], [[[pred]]], axis=1)
+
+    # Inverse transform
+    forecasted_temps = scaler.inverse_transform(np.array(predictions).reshape(-1, 1)).flatten()
+
+    # Show results
+    future_dates = pd.date_range(df_city['Date'].iloc[-1] + pd.Timedelta(days=1), periods=7)
+
+    st.subheader("📅 Next 7 Days Forecast")
+    forecast_df = pd.DataFrame({
+        "Date": future_dates,
+        "Forecasted MaxTemp": forecasted_temps
+    })
+    st.dataframe(forecast_df)
+
+    # Plot forecast
+    st.subheader("📈 Forecast Visualization")
+    plt.figure(figsize=(10, 4))
+    plt.plot(df_city['Date'].iloc[-100:], df_city['MaxTemp'].iloc[-100:], label='Actual')
+    plt.plot(future_dates, forecasted_temps, label='Forecast', marker='o')
+    plt.xticks(rotation=45)
+    plt.xlabel("Date")
+    plt.ylabel("MaxTemp (°C)")
+    plt.legend()
+    st.pyplot(plt)
 
 # -------------------
 # 🌧️ Classification Tab
